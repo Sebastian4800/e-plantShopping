@@ -1,39 +1,49 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  items: [], // [{ name, image, cost, quantity }]
+};
 
 export const CartSlice = createSlice({
-  name: 'cart',
-  initialState: {
-    items: [], // Initialize items as an empty array
-  },
+  name: "cart",
+  initialState,
   reducers: {
-    aaddItem: (state, action) => {
-        const { name, image, cost } = action.payload; // Destructure product details from the action payload
-        // Check if the item already exists in the cart by comparing names
-        const existingItem = state.items.find(item => item.name === name);
-        if (existingItem) {
-            // If item already exists in the cart, increase its quantity
-            existingItem.quantity++;
-        } else {
-            // If item does not exist, add it to the cart with quantity 1
-            state.items.push({ name, image, cost, quantity: 1 });
-        }
+    addItem: (state, action) => {
+      const incoming = action.payload; // {name,image,cost,quantity}
+
+      const existing = state.items.find((it) => it.name === incoming.name);
+
+      // Wenn schon im Warenkorb: nicht doppelt hinzufügen (Button ist ja disabled)
+      if (!existing) {
+        state.items.push({
+          ...incoming,
+          quantity: incoming.quantity ?? 1,
+        });
+      }
     },
+
     removeItem: (state, action) => {
-        state.items = state.items.filter(item => item.name !== action.payload);
+      const name = action.payload?.name ?? action.payload;
+      state.items = state.items.filter((it) => it.name !== name);
     },
+
     updateQuantity: (state, action) => {
-        const { name, quantity } = action.payload; // Destructure the product name and new quantity from the action payload
-        // Find the item in the cart that matches the given name
-        const itemToUpdate = state.items.find(item => item.name === name);
-        if (itemToUpdate) {
-            itemToUpdate.quantity = quantity; // If the item is found, update its quantity to the new value
+        const { name, quantity } = action.payload;
+
+        // Wenn <= 0: Item komplett entfernen
+        if (Number(quantity) <= 0) {
+            state.items = state.items.filter((it) => it.name !== name);
+            return;
         }
 
-    
+        const item = state.items.find((it) => it.name === name);
+        if (!item) return;
+
+        item.quantity = Number(quantity);
     },
+
   },
 });
 
 export const { addItem, removeItem, updateQuantity } = CartSlice.actions;
-
 export default CartSlice.reducer;
